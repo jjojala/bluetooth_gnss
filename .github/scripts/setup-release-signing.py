@@ -24,7 +24,7 @@ if not keystore:
     raise SystemExit("ANDROID_KEYSTORE_BASE64 contains an empty keystore")
 
 os.umask(0o077)
-keystore_path = Path(os.environ["RUNNER_TEMP"]) / "android-release.jks"
+keystore_path = Path(os.environ["RUNNER_TEMP"]) / "android-release.p12"
 keystore_path.write_bytes(keystore)
 
 
@@ -38,6 +38,7 @@ def property_value(value):
 
 properties = {
     "storeFile": str(keystore_path),
+    "storeType": "PKCS12",
     "storePassword": os.environ["ANDROID_KEYSTORE_PASSWORD"],
     "keyAlias": os.environ["ANDROID_KEY_ALIAS"],
     "keyPassword": os.environ["ANDROID_KEY_PASSWORD"],
