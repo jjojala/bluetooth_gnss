@@ -21,9 +21,8 @@ Build instructions
 
 * Install the the [Flutter SDK](https://flutter.dev/docs/get-started/install) as per official instructions including the 'Android setup' and make sure that the Android SDK is installed.
 
-* Make sure the flutter sdk version matches that in pubspec.yaml:
-
-`flutter downgrade v<flutter ver in pubspec.yaml>`
+* Use Flutter 3.29.3, which matches the project's locked dependencies. The
+  archived Flutter 3.24.3 toolchain cannot resolve the current dependencies.
 
 * In this folder run:
 `flutter pub get`
@@ -83,6 +82,11 @@ Or use the build scripts:
 ./build_and_push_release.sh         # Bluetooth GNSS build + push
 ./build_and_push_release_batray.sh  # BatRay build + push
 ```
+
+GitHub Actions analyzes and tests the project, builds both Android flavors on
+pushes and pull requests, and uploads the APKs as workflow artifacts. These
+CI APKs use a temporary signing key and are not suitable for Play Store
+uploads.
 
 * Develop in Android studio:
   - Open android studio, and choose 'Projects' > 'Open' to this folder (or File > Open... menu) and you can edit the source code then run 'main.dart' from there. This is suitable for editing the dart files in the lib folder.

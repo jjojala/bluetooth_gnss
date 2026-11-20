@@ -1,0 +1,102 @@
+name: Android build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+
+      - name: Install Android SDK components
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;27.0.12077973"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.29.3"
+          channel: stable
+          cache: true
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@1.90.0
+        with:
+          targets: aarch64-linux-android
+
+      - name: Install Flutter Rust Bridge code generator
+        run: cargo install flutter_rust_bridge_codegen --version 2.11.1 --locked
+
+      - name: Generate Rust build integration
+        run: |
+          mkdir "$RUNNER_TEMP/frb-project"
+          git archive HEAD | tar -xf - -C "$RUNNER_TEMP/frb-project"
+          (cd "$RUNNER_TEMP/frb-project" && flutter_rust_bridge_codegen integrate)
+          cp -a "$RUNNER_TEMP/frb-project/rust_builder" .
+
+      - name: Get Flutter dependencies
+        run: flutter pub get
+
+      - name: Analyze Dart code
+        run: flutter analyze --fatal-warnings
+
+      - name: Run Flutter tests
+        run: flutter test
+
+      - name: Create temporary Android signing key
+        env:
+          KEYSTORE_PATH: ${{ runner.temp }}/ci-signing-key.jks
+        run: |
+          keytool -genkeypair -v \
+            -keystore "$KEYSTORE_PATH" \
+            -storepass ci-password \
+            -alias ci \
+            -keypass ci-password \
+            -dname "CN=GitHub Actions" \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 1
+          cat > "$GITHUB_WORKSPACE/../key.properties" <<EOF
+          storeFile=$KEYSTORE_PATH
+          storePassword=ci-password
+          keyAlias=ci
+          keyPassword=ci-password
+          EOF
+
+      - name: Build Bluetooth GNSS APK
+        run: flutter build apk --release --flavor btgnss -t lib/main.dart
+
+      - name: Build BatRay APK
+        run: flutter build apk --release --flavor batray -t lib/main_batray.dart
+
+      - name: Upload APK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apks
+          path: |
+            build/app/outputs/flutter-apk/app-btgnss-release.apk
+            build/app/outputs/flutter-apk/app-batray-release.apk
+          if-no-files-found: error
