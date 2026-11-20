@@ -84,9 +84,27 @@ Or use the build scripts:
 ```
 
 GitHub Actions analyzes and tests the project, builds both Android flavors on
-pushes and pull requests, and uploads the APKs as workflow artifacts. These
-CI APKs use a temporary signing key and are not suitable for Play Store
-uploads.
+pushes and pull requests, and uploads the APKs as workflow artifacts. Successful
+pushes to the default branch also publish both APKs at
+<https://jjojala.github.io/bluetooth_gnss/>. Pull requests and non-default
+branches use a temporary signing key; these APKs cannot update installed builds
+signed with a different key.
+
+To publish APKs, configure GitHub Pages to use **GitHub Actions** and add these
+repository Actions secrets:
+
+| Secret | Value |
+| --- | --- |
+| `ANDROID_KEYSTORE_BASE64` | Base64-encoded keystore (`base64 -w 0 /path/to/keystore.jks`) |
+| `ANDROID_KEYSTORE_PASSWORD` | Keystore password |
+| `ANDROID_KEY_ALIAS` | Signing key alias |
+| `ANDROID_KEY_PASSWORD` | Signing key password |
+
+Keep a secure backup of the keystore and passwords. Use the same key for each
+published build; Android will not install an update over an app signed with a
+different key. In particular, updating a Play Store installation requires the
+same signing key used by its installed APK. Missing signing secrets cause the
+default-branch build to fail instead of publishing with a temporary key.
 
 * Develop in Android studio:
   - Open android studio, and choose 'Projects' > 'Open' to this folder (or File > Open... menu) and you can edit the source code then run 'main.dart' from there. This is suitable for editing the dart files in the lib folder.
