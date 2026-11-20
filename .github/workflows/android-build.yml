@@ -51,7 +51,10 @@ jobs:
         run: cargo install flutter_rust_bridge_codegen --version 2.11.1 --locked
 
       - name: Generate Rust build integration
-        run: flutter_rust_bridge_codegen integrate
+        run: |
+          flutter_rust_bridge_codegen integrate
+          # The generator rewrites main.dart and formats existing Dart sources.
+          git archive HEAD lib test pubspec.yaml pubspec.lock | tar -xf -
 
       - name: Get Flutter dependencies
         run: flutter pub get
