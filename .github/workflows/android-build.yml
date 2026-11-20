@@ -52,9 +52,10 @@ jobs:
 
       - name: Generate Rust build integration
         run: |
-          flutter_rust_bridge_codegen integrate
-          # The generator rewrites main.dart and formats existing Dart sources.
-          git archive HEAD lib test pubspec.yaml pubspec.lock | tar -xf -
+          mkdir "$RUNNER_TEMP/frb-project"
+          git archive HEAD | tar -xf - -C "$RUNNER_TEMP/frb-project"
+          (cd "$RUNNER_TEMP/frb-project" && flutter_rust_bridge_codegen integrate)
+          cp -a "$RUNNER_TEMP/frb-project/rust_builder" .
 
       - name: Get Flutter dependencies
         run: flutter pub get
