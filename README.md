@@ -21,9 +21,8 @@ Build instructions
 
 * Install the the [Flutter SDK](https://flutter.dev/docs/get-started/install) as per official instructions including the 'Android setup' and make sure that the Android SDK is installed.
 
-* Make sure the flutter sdk version matches that in pubspec.yaml:
-
-`flutter downgrade v<flutter ver in pubspec.yaml>`
+* Use Flutter 3.29.3, which matches the project's locked dependencies. The
+  archived Flutter 3.24.3 toolchain cannot resolve the current dependencies.
 
 * In this folder run:
 `flutter pub get`
