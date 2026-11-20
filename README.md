@@ -84,6 +84,11 @@ Or use the build scripts:
 ./build_and_push_release_batray.sh  # BatRay build + push
 ```
 
+GitHub Actions analyzes and tests the project, builds both Android flavors on
+pushes and pull requests, and uploads the APKs as workflow artifacts. These
+CI APKs use a temporary signing key and are not suitable for Play Store
+uploads.
+
 * Develop in Android studio:
   - Open android studio, and choose 'Projects' > 'Open' to this folder (or File > Open... menu) and you can edit the source code then run 'main.dart' from there. This is suitable for editing the dart files in the lib folder.
   - UI changes to main.dart can be seen immediately (hot-reload) on phone but function changes or java/engine part changes won't, you need to 'stop' then 'run' main.dart again for the changes to take effect.
