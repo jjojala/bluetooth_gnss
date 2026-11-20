@@ -67,6 +67,7 @@ jobs:
         run: flutter test
 
       - name: Create temporary Android signing key
+        if: github.event_name != 'push' || github.ref != format('refs/heads/{0}', github.event.repository.default_branch)
         env:
           KEYSTORE_PATH: ${{ runner.temp }}/ci-signing-key.jks
         run: |
@@ -86,6 +87,15 @@ jobs:
           keyPassword=ci-password
           EOF
 
+      - name: Configure persistent Android signing key
+        if: github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: python3 .github/scripts/setup-release-signing.py
+
       - name: Build Bluetooth GNSS APK
         run: flutter build apk --release --flavor btgnss -t lib/main.dart
 
@@ -100,3 +110,32 @@ jobs:
             build/app/outputs/flutter-apk/app-btgnss-release.apk
             build/app/outputs/flutter-apk/app-batray-release.apk
           if-no-files-found: error
+
+      - name: Prepare download page
+        run: |
+          mkdir -p build/pages
+          cp .github/pages/index.html build/pages/index.html
+          cp build/app/outputs/flutter-apk/app-btgnss-release.apk build/pages/
+          cp build/app/outputs/flutter-apk/app-batray-release.apk build/pages/
+          cd build/pages
+          sha256sum app-btgnss-release.apk app-batray-release.apk > SHA256SUMS.txt
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/pages
+
+  deploy:
+    if: github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy APK download page
+        id: deployment
+        uses: actions/deploy-pages@v4
